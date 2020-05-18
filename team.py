@@ -1,100 +1,124 @@
-from helper import Card, CARDS, findAllActions
+from helper import Action, CARDS, findAllActions
 from copy import copy
 import random
+import time
 
 class Player:
+    MAX_UTILITY = 100
+    MIN_UTILITY = -100
+    TIME_LIMIT = 30
+    CHECK_TIMEOUT_EVERY = 10000
+
     def __init__(self):
-        self.agent = RandomAgent()
         self.opponent = None
         self.myList = None
         self.opponentList = None
+        self.cache = None
+        self.MAX_DEPTH = None
+        self.visitedNodes = None
+        self.start = None
+        self.end = None
 
     def teamName(self) -> str:
-        return self.agent.name
+        return 'Awesome Big2 Agent'
     
-    def newGame(self, hand1:list, hand2:list, opponent:str):
+    def newGame(self, hand1: list, hand2: list, opponent: str):
         self.opponent = opponent
         self.myList = copy(hand1)
         self.opponentList = copy(hand2)
 
-    def play(self, turn:list) -> list:
-        if turn:
-            for name in turn:
-                self.opponentList.remove(name)
-            nextTurn = self.agent.desideToDefend(self.myList, self.opponentList, turn)
-        else:
-            nextTurn = self.agent.desideToInitiate(self.myList, self.opponentList)
-        return nextTurn
+    def hash(self, cnd):
+        return tuple(cnd[card] for card in CARDS)
+
+    def play(self, turn: list) -> list:
+        self.start = time.time()
+        for name in turn:
+            self.opponentList.remove(name)
+        myCND = {card: self.myList.count(card.name) for card in CARDS}
+        opponentCND = {card: self.opponentList.count(card.name) for card in CARDS}
+        actionList = findAllActions(myCND)
+        opponentAction = self.interpret(turn)
+        biggerActionList = [myAction for myAction in actionList if myAction > opponentAction]
+        try:
+            for depth in range(5, 20):
+                self.MAX_DEPTH = depth
+                self.visitedNodes = 0
+                self.cache = {}
+                select = lambda action: self.minimize(self.respond(myCND, action), opponentCND, action, alpha=self.MIN_UTILITY, beta=self.MAX_UTILITY, depth=1)
+                bestAction = max(biggerActionList, key=select)
+            return bestAction.show()
+        except TimeoutError:
+            return bestAction.show()
 
     def ack(self, actualTurn):
         for name in actualTurn:
             self.myList.remove(name)
-
-class Agent:
-
-    def findAllActionsForCurrentHand(self, hand: list):
-        cardNumberDict = {card: hand.count(card.name) for card in CARDS}
-        return findAllActions(cardNumberDict)
 
     def interpret(self, turn: list):
         cardNumberDict = {card: turn.count(card.name) for card in CARDS}
         allActions = findAllActions(cardNumberDict)
         return [action for action in allActions if action.getTotalNumber() == len(turn)][0]
 
-    def desideToInitiate(self, myList, opponentList):
-        raise NotImplementedError("Agent 类必须重写决策方法")
+    def respond(self, cnd: dict, action: Action):
+        newCND = copy(cnd)
+        for card in action.chain:
+            newCND[card] -= action.size
+        for affiliation in action.affiliationList:
+            newCND[affiliation] -= action.affiliationSize
+        return newCND
 
-    def desideToDefend(self, myList, opponentList, turn):
-        raise NotImplementedError("Agent 类必须重写决策方法")
+    def maximize(self, oneCND: dict, anotherCND: dict, lastAction: Action, alpha, beta, depth):
+        self.visitedNodes += 1
+        if self.visitedNodes % self.CHECK_TIMEOUT_EVERY == 0:
+            self.end = time.time()
+            if self.end - self.start > self.TIME_LIMIT - 1:
+                raise TimeoutError()
+        key = self.hash(oneCND) + self.hash(anotherCND) + lastAction.hash()
+        if key in self.cache:
+            return self.cache[key]
+        if not any(oneCND.values()): return sum(anotherCND.values())
+        if not any(anotherCND.values()): return -sum(oneCND.values())
+        if depth == self.MAX_DEPTH: return self.evaluate(oneCND, anotherCND, lastAction, True)
+        actionList = sorted([action for action in findAllActions(oneCND) if action > lastAction], key=lambda x: x.getTotalNumber(), reverse=True)
+        value = self.MIN_UTILITY
+        for action in actionList:
+            value = max(value, self.minimize(self.respond(oneCND, action), anotherCND, action, alpha, beta, depth + 1))
+            if value >= beta: return value
+            alpha = max(alpha, value)
+        self.cache[key] = value
+        return value
 
-class RandomAgent(Agent):
-    """
-    在所有可能的出牌行为中随机选取一个
-    """
-    def __init__(self):
-        self.name = '随机的玩家'
-
-    def desideToInitiate(self, myList, opponentList):
-        actionList = self.findAllActionsForCurrentHand(myList)
-        action = random.choice(actionList)
-        return action.show()
-
-    def desideToDefend(self, myList, opponentCardList, turn):
-        actionList = self.findAllActionsForCurrentHand(myList)
-        opponentAction = self.interpret(turn)
-        biggerActionList = [myAction for myAction in actionList if myAction > opponentAction]
-        if biggerActionList:
-            biggerAction = random.choice(biggerActionList)
-            return biggerAction.show()
+    def minimize(self, oneCND: dict, anotherCND: dict, lastAction: Action, alpha, beta, depth):
+        self.visitedNodes += 1
+        if self.visitedNodes % self.CHECK_TIMEOUT_EVERY == 0:
+            self.end = time.time()
+            if self.end - self.start > self.TIME_LIMIT - 1:
+                raise TimeoutError()
+        key = self.hash(oneCND) + self.hash(anotherCND) + lastAction.hash()
+        if key in self.cache:
+            return self.cache[key]
+        if not any(oneCND.values()): return sum(anotherCND.values())
+        if not any(anotherCND.values()): return -sum(oneCND.values())
+        if depth == self.MAX_DEPTH: return self.evaluate(oneCND, anotherCND, lastAction, False)
+        actionList = sorted([action for action in findAllActions(anotherCND) if action > lastAction], key=lambda x: x.getTotalNumber(), reverse=True)
+        value = self.MAX_UTILITY
+        for action in actionList:
+            value = min(value, self.maximize(oneCND, self.respond(anotherCND, action), action, alpha, beta, depth + 1))
+            if value <= alpha: return value
+            beta = min(beta, value)
+        self.cache[key] = value
+        return value
+    
+    def evaluate(self, oneCND: dict, anotherCND: dict, lastAction: Action, isMyTurn: bool):
+        if not any(oneCND.values()): return sum(anotherCND.values())
+        if not any(anotherCND.values()): return -sum(oneCND.values())
+        if isMyTurn:
+            actionList = sorted([action for action in findAllActions(oneCND) if action > lastAction], key=lambda x: x.getTotalNumber(), reverse=True)
+            bestAction = actionList[0]
+            forwardCND = self.respond(oneCND, bestAction)
+            return self.evaluate(forwardCND, anotherCND, bestAction, not isMyTurn)
         else:
-            return []
-
-class SmartAgent(Agent):
-    """
-    出小牌，类似于托管
-    """
-    def __init__(self):
-        self.name = '聪明的玩家'
-
-    def desideToInitiate(self, myList, opponentList):
-        actionList = self.findAllActionsForCurrentHand(myList)
-        action = actionList[0]
-        return action.show()
-
-    def desideToDefend(self, myCardList, opponentCardList, turn):
-        actionList = self.findAllActionsForCurrentHand(myList)
-        opponentAction = self.interpret(turn)
-        biggerActionList = [myAction for myAction in actionList if myAction > opponentAction]
-        if biggerActionList:
-            biggerAction = biggerActionList[0]
-            return biggerAction.show()
-        else:
-            return []
-
-class AwesomeAgent(Agent):
-    """
-    我们最后提交上去的版本
-    """
-
-    def __init__(self):
-        self.name = 'Awesome Big2 Agent'
+            actionList = sorted([action for action in findAllActions(anotherCND) if action > lastAction], key=lambda x: x.getTotalNumber(), reverse=True)
+            bestAction = actionList[0]
+            forwardCND = self.respond(anotherCND, bestAction)
+            return self.evaluate(oneCND, forwardCND, bestAction, not isMyTurn)
