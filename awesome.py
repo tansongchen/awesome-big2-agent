@@ -49,6 +49,10 @@ class Player:
         self.opponent = opponent
         self.myList = hand1[:]
         self.opponentList = hand2[:]
+        self.cache = None
+        self.start = None
+        self.end = None
+        self.maxDepth = None
 
     def play(self, t):
         """
@@ -66,8 +70,9 @@ class Player:
             _, lastAction = self.branch(pseudoHand, None, smart=True)
         else:
             lastAction = tuple()
+        newHand = myHand[:]
         try:
-            for maxDepth in range(100, 102):
+            for maxDepth in range(100, 101):
                 self.cache = {}
                 self.visitedNodes = 0
                 self.maxDepth = maxDepth
@@ -95,7 +100,7 @@ class Player:
         if lastAction:
             lastTail, length, size, affiliationSize = lastAction
             # 同一类牌型的可能行动
-            count = 0 if hand[12] < size else 1 if hand[11] < size else 2
+            count = 0 if hand[-1] < size else 1 if hand[-2] < size else 2
             for tail in self.VALUES:
                 if hand[tail] >= size:
                     count += 1
@@ -114,7 +119,7 @@ class Player:
                     count = 0
             # 炸弹
             if size != 4:
-                for tail in range(13):
+                for tail in self.VALUES:
                     if hand[tail] == 4:
                         action = (tail, 1, 4, 0)
                         newHand = hand[:]
@@ -123,7 +128,7 @@ class Player:
             # 不出
             returnList.append((hand, tuple()))
         else:
-            countList = [0 if hand[12] < i else 1 if hand[11] < i else 2 for i in (1, 2, 3)]
+            countList = [0 if hand[-1] < size else 1 if hand[-2] < size else 2 for size in (1, 2, 3)]
             for tail in self.VALUES:
                 if hand[tail] >= 1:
                     countList[0] += 1
@@ -157,7 +162,7 @@ class Player:
                     countList[0] = 0
             returnList = sorted(returnList, key=lambda x:(-x[1][1]*(x[1][2]+x[1][3]),x[1][0]))
             # 空炸
-            for tail in range(13):
+            for tail in self.VALUES:
                 if hand[tail] == 4:
                     action = (tail, 1, 4, 0)
                     newHand = hand[:]
@@ -178,19 +183,19 @@ class Player:
         beta: 在该条路径上，对方能使己方效用达到的最小值
         depth: 当前节点的深度
         """
+        key = tuple(myHand) + tuple(opponentHand) + lastAction
+        utility = self.cache.get(key)
+        if utility is not None: return utility
         if depth == self.maxDepth:
             newHand, action = self.branch(myHand, lastAction, smart=True)
             if not any(newHand): return sum(opponentHand)
             return -self.evaluate(opponentHand, newHand, action, alpha, beta, depth)
-        bestNewHand = []
-        key = tuple(myHand) + tuple(opponentHand) + lastAction
-        utility = self.cache.get(key)
-        if utility is not None: return utility
         self.visitedNodes += 1
         if self.visitedNodes % self.CHECK_TIMEOUT_EVERY == 0:
-            self.end = time.time()
+            self.end = time()
             if self.end - self.start > self.TIME_LIMIT - 1: raise TimeoutError()
         utility = self.MIN_UTILITY
+        bestNewHand = []
         for newHand, action in self.branch(myHand, lastAction):
             if not any(newHand):
                 utility = sum(opponentHand)
@@ -201,7 +206,7 @@ class Player:
                 utility = newUtility
                 alpha = max(alpha, utility)
                 if depth == 0: bestNewHand = newHand
-                if utility >= beta: break
+                if alpha >= beta: break
         self.cache[key] = utility
         if depth == 0:
             return bestNewHand
