@@ -51,7 +51,7 @@ def main(argv):
         elif opt in ("-g", "--game"):
             game = int(arg)
 
-    if not Tom or not Jack or not game:
+    if not Tom or not Jack:
         print('big2.py -a <attacker> -d <defender> -g <game>')
         sys.exit(3)
 

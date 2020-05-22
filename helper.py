@@ -47,6 +47,9 @@ class Action:
         self.affiliationList = affiliationList
         self.chain = [self.tail - i for i in range(self.length)]
 
+    def hash(self):
+        return (self.tail.value, self.size, self.length)
+
     def getTotalNumber(self):
         return (self.size + self.affiliationSize) * self.length
 
@@ -54,7 +57,7 @@ class Action:
         return [card.name for card in self.chain for _ in range(self.size)] + [card.name for card in self.affiliationList for _ in range(self.affiliationSize)]
 
     def __gt__(self, another):
-        return isinstance(another, type(self)) and self.length == another.length and self.tail > another.tail
+        return isinstance(another, Pass) or (isinstance(another, type(self)) and self.length == another.length and self.tail > another.tail)
 
     def augment(self, cardNumberDict: dict):
         # 增长得到顺子
@@ -67,6 +70,19 @@ class Action:
             action = type(self)(self.tail, self.length + len(nextCards))
             augmentedActionList.append(action)
         return augmentedActionList
+
+class Pass(Action):
+    def __init__(self):
+        self.tail = 0
+        self.length = 0
+        self.chain = []
+        self.affiliationList = []
+
+    def __gt__(self, another):
+        return not isinstance(another, Pass)
+
+    def hash(self):
+        return (self.tail, self.size, self.length)
 
 class Single(Action):
     size = 1
@@ -111,7 +127,7 @@ class Quadruple(Action):
         return not isinstance(another, Quadruple) or self.tail > another.tail
 
 def findAllActions(cardNumberDict):
-    actionList = []
+    actionList = [Pass()]
     queue = Queue()
     # 这块不优雅，但速度快，所以就先这么写了
     for card, number in cardNumberDict.items():

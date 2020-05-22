@@ -19,7 +19,7 @@ class Dealer:
         self.prec['A'] = 12
         self.prec['2'] = 13
         self.games = ((['A', 'A'], ['2', '3', '3']),
-                      (['A', 'A', '9'], ['2', 'Q', 'Q','Q', '10', '10', '7', '7', '5', '5', '3']))
+                      (['A', 'A', '9'], ['2', 'Q', 'Q', 'Q', '10', '10', '7', '7', '5', '5', '3']))
 
     def sublist(self, t):
         sub = collections.Counter(t)
