@@ -13,7 +13,13 @@ class Player:
     # 搜索时限
     TIME_LIMIT = 30
     # 每访问该数量的节点就检查是否超时
-    CHECK_TIMEOUT_EVERY = 100000
+    CHECK_TIMEOUT_EVERY = 1000
+    # 开始求近似解的规模阈值
+    ESTIMATION_THRESHOLD = 10
+    # 初次搜索深度
+    FIRST_DEPTH = 8
+    # 最大搜索深度
+    MAX_DEPTH = 100
 
     def __init__(self):
         # 对方名称
@@ -64,21 +70,27 @@ class Player:
             self.opponentList.remove(name)
         myHand = [self.myList.count(name) for name in self.NAMES]
         opponentHand = [self.opponentList.count(name) for name in self.NAMES]
-        # 由于分枝函数在 smart 模式下总是返回最长的行动，因此这一方法可以把对方的牌型解析为牌型四元组
+        # 找出分枝函数所能返回最长的行动，从而把对方的牌型解析为牌型四元组
         if t:
             pseudoHand = [t.count(name) for name in self.NAMES]
-            _, lastAction = self.branch(pseudoHand, None, smart=True)
+            _, lastAction = sorted(self.branch(pseudoHand, None), key=lambda x:x[1][1]*(x[1][2]+x[1][3]), reverse=True)[0]
         else:
             lastAction = tuple()
         newHand = myHand[:]
-        try:
-            for maxDepth in range(100, 101):
-                self.cache = {}
-                self.visitedNodes = 0
-                self.maxDepth = maxDepth
-                newHand = self.evaluate(myHand, opponentHand, lastAction, self.MIN_UTILITY, self.MAX_UTILITY, 0)
-        except TimeoutError:
-            pass
+        if max(len(self.myList), len(self.opponentList)) <= self.ESTIMATION_THRESHOLD:
+            self.cache = {}
+            self.visitedNodes = 0
+            self.maxDepth = self.MAX_DEPTH
+            newHand = self.evaluate(myHand, opponentHand, lastAction, self.MIN_UTILITY, self.MAX_UTILITY, 0)
+        else:
+            try:
+                for maxDepth in range(self.FIRST_DEPTH, self.MAX_DEPTH):
+                    self.cache = {}
+                    self.visitedNodes = 0
+                    self.maxDepth = maxDepth
+                    newHand = self.evaluate(myHand, opponentHand, lastAction, self.MIN_UTILITY, self.MAX_UTILITY, 0)
+            except TimeoutError:
+                pass
         return [self.NAMES[i] for i in self.VALUES for _ in range(myHand[i] - newHand[i])]
 
     def ack(self, t):
@@ -104,6 +116,7 @@ class Player:
             for tail in self.VALUES:
                 if hand[tail] >= size:
                     count += 1
+                    if count > 13: count = 13
                     if tail > lastTail and count >= length:
                         intermediateHand = hand[:]
                         for index in range(tail, tail - length, -1): intermediateHand[index] -= size
@@ -132,18 +145,21 @@ class Player:
             for tail in self.VALUES:
                 if hand[tail] >= 1:
                     countList[0] += 1
+                    if countList[0] > 13: countList[0] = 13
                     for length in list(range(countList[0], 4, -1)) + [1]:
                         newHand = hand[:]
                         for index in range(tail, tail - length, -1): newHand[index] -= 1
                         returnList.append((newHand, (tail, length, 1, 0)))
                     if hand[tail] >= 2:
                         countList[1] += 1
+                        if countList[1] > 13: countList[1] = 13
                         for length in range(countList[1], 0, -1):
                             newHand = hand[:]
                             for index in range(tail, tail - length, -1): newHand[index] -= 2
                             returnList.append((newHand, (tail, length, 2, 0)))
                         if hand[tail] >= 3:
                             countList[2] += 1
+                            if countList[2] > 13: countList[2] = 13
                             for length in range(countList[2], 0, -1):
                                 intermediateHand = hand[:]
                                 for index in range(tail, tail - length, -1): intermediateHand[index] -= 3
@@ -158,8 +174,11 @@ class Player:
                             countList[2] = 0
                     else:
                         countList[1] = 0
+                        countList[2] = 0
                 else:
                     countList[0] = 0
+                    countList[1] = 0
+                    countList[2] = 0
             returnList = sorted(returnList, key=lambda x:(-x[1][1]*(x[1][2]+x[1][3]),x[1][0]))
             # 空炸
             for tail in self.VALUES:

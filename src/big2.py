@@ -78,6 +78,8 @@ def main(argv):
         player.ack(t) # player获知Annie的裁定
     else:
         print("{} is the winner! score={}".format(player.teamName(), score))
+        with open('result.dat', 'a+') as f:
+            f.write(player.teamName() + '\t' + str(score) + '\n')
 
 if __name__ == "__main__":
     main(sys.argv[1:])
