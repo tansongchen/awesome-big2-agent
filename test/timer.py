@@ -1,21 +1,21 @@
 import matplotlib.pyplot as plt
 import matplotlib.font_manager
-PingFang = matplotlib.font_manager.FontProperties(fname='/System/Library/Fonts/PingFang.ttc')
+PingFang = matplotlib.font_manager.FontProperties(
+    fname='/System/Library/Fonts/PingFang.ttc')
 with open('test.dat') as f:
     fl = f.readlines()
 
-font1 = {'family' : 'SimHei',
-'weight' : 'normal',
-'size'   : 12,
+font1 = {
+    'family': 'SimHei',
+    'weight': 'normal',
+    'size': 12,
 }
 l = []
 time = []
 for i in range(len(fl) // 3):
-    l.append((
-        tuple(fl[3*i].strip().split()),
-        tuple(fl[3*i+1].strip().split())
-        ))
-    time.append(float(fl[3*i+2].strip()))
+    l.append((tuple(fl[3 * i].strip().split()),
+              tuple(fl[3 * i + 1].strip().split())))
+    time.append(float(fl[3 * i + 2].strip()))
 
 # Feature：长度
 
