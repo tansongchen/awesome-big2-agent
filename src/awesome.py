@@ -17,7 +17,7 @@ class Player:
     # 开始求近似解的规模阈值
     __ESTIMATION_THRESHOLD = 10
     # 初次搜索深度
-    __FIRST_DEPTH = 6
+    __FIRST_DEPTH = 7
     # 最大搜索深度
     __MAX_DEPTH = 100
 
@@ -84,11 +84,11 @@ class Player:
             newHand = self.__evaluate(myHand, opponentHand, lastAction, self.__MIN_UTILITY, self.__MAX_UTILITY, 0)
         else:
             try:
-                for maxDepth in range(self.__FIRST_DEPTH, self.__MAX_DEPTH):
-                    self.__cache = {}
-                    self.__visitedNodes = 0
-                    self.__maxDepth = maxDepth
-                    newHand = self.__evaluate(myHand, opponentHand, lastAction, self.__MIN_UTILITY, self.__MAX_UTILITY, 0)
+                # for maxDepth in range(self.__FIRST_DEPTH, self.__MAX_DEPTH):
+                self.__cache = {}
+                self.__visitedNodes = 0
+                self.__maxDepth = self.__FIRST_DEPTH
+                newHand = self.__evaluate(myHand, opponentHand, lastAction, self.__MIN_UTILITY, self.__MAX_UTILITY, 0)
             except TimeoutError:
                 pass
         return [self.__NAMES[i] for i in self.__VALUES for _ in range(myHand[i] - newHand[i])]

@@ -1,7 +1,4 @@
 import matplotlib.pyplot as plt
-import matplotlib.font_manager
-PingFang = matplotlib.font_manager.FontProperties(
-    fname='/System/Library/Fonts/PingFang.ttc')
 with open('test.dat') as f:
     fl = f.readlines()
 
@@ -28,5 +25,4 @@ plt.xlim((5, 12))
 plt.ylim((1e-4, 1e2))
 plt.xlabel('纸牌数量', font1)
 plt.ylabel('精确解用时（秒）', font1)
-# plt.semilogy(cardLevel, time, '.', color="blue", Marker='.')
 plt.show()
