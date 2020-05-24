@@ -2,7 +2,7 @@
 #PBS -V
 #PBS -S /bin/bash
 #PBS -j oe
-#PBS -o /disk/tansongchen/tmp/data/${PBS_JOBID%.*}
+#PBS -o /disk/tansongchen/tmp/test/${PBS_JOBID%.*}
 #PBS -l nodes=1:ppn=1
 #PBS -l walltime=240:00:00
 

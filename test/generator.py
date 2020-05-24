@@ -2,7 +2,7 @@ import random
 from awesome import Player
 from time import time
 
-POKER = [name for _ in range(4) for name in Player.NAMES]
+POKER = [name for _ in range(4) for name in Player._Player__NAMES]
 
 # # 生成 6 + 6 到 12 + 12 的牌局各 100 个，测试性能
 
