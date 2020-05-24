@@ -9,7 +9,7 @@ POKER = [name for _ in range(4) for name in Player._Player__NAMES]
 p = Player()
 with open('first.dat', 'a+') as f:
     for firstDepth in range(4, 9):
-        Player.__FIRST_DEPTH = firstDepth
+        p._Player__FIRST_DEPTH = firstDepth
         for _ in range(100):
             poker = POKER[:]
             random.shuffle(poker)

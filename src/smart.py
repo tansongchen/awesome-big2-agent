@@ -43,7 +43,7 @@ class Player:
         """
         智能体名称
         """
-        return '神算子'
+        return '智多星'
 
     def newGame(self, hand1, hand2, opponent):
         """
@@ -75,7 +75,7 @@ class Player:
             _, lastAction = sorted(self.__branch(pseudoHand, None), key=lambda x:x[1][1]*(x[1][2]+x[1][3]), reverse=True)[0]
         else:
             lastAction = tuple()
-        action, newHand = self.__branch(myHand, lastAction, smart=True)
+        newHand, action = self.__branch(myHand, lastAction, smart=True)
         return [self.__NAMES[i] for i in self.__VALUES for _ in range(myHand[i] - newHand[i])]
 
     def ack(self, t):
