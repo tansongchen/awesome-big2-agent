@@ -60,11 +60,11 @@ def main(argv):
     cards = Annie.deal(game)
     Tom.newGame(copy.copy(cards[0]), copy.copy(cards[1]), Jack.teamName())
     Jack.newGame(copy.copy(cards[1]), copy.copy(cards[0]), Tom.teamName())
-    print("{:<80}".format(Tom.teamName()))
-    print("{:<80}".format(str(cards[0])))
-    print("{:>80}".format(Jack.teamName()))
-    print("{:>80}".format(str(cards[1])))
-    print("-"*80)
+    print("{:<40}".format(Tom.teamName()))
+    print("{:<40}".format(' '.join(cards[0])))
+    print("{:>40}".format(Jack.teamName()))
+    print("{:>40}".format(' '.join(cards[1])))
+    print("-"*40)
 
     #Tom.play(['A', 'J', '2', '3', '3', '5', '10'], [7, 7, 8], [8]))
     t, player, score = [], None, None
@@ -73,12 +73,12 @@ def main(argv):
         player = Tom if not player or player is Jack else Jack 
         t = player.play(t)
         score, t = Annie.check(t)
-        output = "{:<80}" if player is Tom else "{:>80}"
-        print(output.format(str(t) if t else "pass"))
+        output = "{:<40}" if player is Tom else "{:>40}"
+        print(output.format(' '.join(t) if t else "pass"))
         player.ack(t) # player获知Annie的裁定
     else:
         print("{} is the winner! score={}".format(player.teamName(), score))
-        with open('test/benchmark.result.dat', 'a+') as f:
+        with open('test/contest.result.dat', 'a+') as f:
             f.write(player.teamName() + '\t' + str(score) + '\n')
 
 if __name__ == "__main__":

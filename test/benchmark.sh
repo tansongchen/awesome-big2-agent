@@ -6,14 +6,14 @@
 #PBS -l nodes=1:ppn=1
 #PBS -l walltime=240:00:00
 
-# cd $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
 
-for index in {0..1299}
+for index in {0..129}
 do
-    python3 src/big2.py -a awesome -d smart -g ${index}
+    python3 src/big2.py -a awesome -d rush -g ${index}
 done
 
-for index in {0..1299}
+for index in {0..129}
 do
-    python3 src/big2.py -a smart -d awesome -g ${index}
+    python3 src/big2.py -a rush -d awesome -g ${index}
 done
