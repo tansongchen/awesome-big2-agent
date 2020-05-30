@@ -18,7 +18,7 @@ class Dealer:
         self.prec['K'] = 11
         self.prec['A'] = 12
         self.prec['2'] = 13
-        with open('test/benchmark.games.dat') as f:
+        with open('test/benchmark.in') as f:
             self.games = [tuple([x.split(' ') for x in line.strip().split('\t')]) for line in f]
         # self.games = ((['A', 'A'], ['2', '3', '3']),
         #               (['2', 'A', 'A', '4', '3'], ['A', '10', '9', '5', '3']),

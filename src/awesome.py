@@ -111,7 +111,6 @@ class Player:
         returnList = []
         if lastAction:
             lastTail, length, size, affiliationSize = lastAction
-            # 同一类牌型的可能行动
             count = 0 if hand[-1] < size else 1 if hand[-2] < size else 2
             for tail in self.__VALUES:
                 if hand[tail] >= size:
@@ -129,7 +128,6 @@ class Player:
                             returnList.append((intermediateHand, (tail, length, size, affiliationSize)))
                 else:
                     count = 0
-            # 炸弹
             if size != 4:
                 for tail in self.__VALUES:
                     if hand[tail] == 4:
@@ -137,7 +135,6 @@ class Player:
                         newHand = hand[:]
                         newHand[tail] = 0
                         returnList.append((newHand, action))
-            # 不出
             returnList.append((hand, tuple()))
         else:
             countList = [0 if hand[-1] < size else 1 if hand[-2] < size else 2 for size in (1, 2, 3)]
@@ -177,17 +174,12 @@ class Player:
                     countList[1] = 0
                     countList[2] = 0
             returnList.sort(key=lambda x:(-x[1][1]*(x[1][2]+x[1][3]),x[1][0]))
-            # 空炸
             for tail in self.__VALUES:
                 if hand[tail] == 4:
                     action = (tail, 1, 4, 0)
                     newHand = hand[:]
                     newHand[tail] = 0
                     returnList.append((newHand, action))
-        # for newHand, action in returnList:
-        #     if any(x < 0 for x in newHand):
-        #         print(newHand, action, hand)
-        #         raise Exception()
         if smart:
             return returnList[0]
         else:
@@ -208,9 +200,6 @@ class Player:
         if utility is not None: return utility
         if depth == self.__maxDepth:
             return sum(opponentHand) - sum(myHand)
-            # newHand, action = self.__branch(myHand, lastAction, smart=True)
-            # if not any(newHand): return sum(opponentHand)
-            # return -self.__evaluate(opponentHand, newHand, action, alpha, beta, depth)
         self.__visitedNodes += 1
         if self.__visitedNodes % self.__CHECK_TIMEOUT_EVERY == 0:
             self.__end = time()

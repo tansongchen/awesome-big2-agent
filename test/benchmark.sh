@@ -10,10 +10,10 @@ cd $PBS_O_WORKDIR
 
 for index in {0..129}
 do
-    python3 src/big2.py -a awesome -d rush -g ${index}
+    python3 src/big2.py -a test -d test2 -g ${index}
 done
 
 for index in {0..129}
 do
-    python3 src/big2.py -a rush -d awesome -g ${index}
+    python3 src/big2.py -a test2 -d test -g ${index}
 done
